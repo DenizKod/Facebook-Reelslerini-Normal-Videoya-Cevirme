@@ -14,7 +14,7 @@
 // @name        Facebook Reels Zaman Butonu Ekleme
 // @namespace   UserScript
 // @match       https://www.facebook.com/*
-// @version     0.1.2
+// @version     0.1.4
 // @license     MIT
 // @author      Deniz Gölcü BGY
 // @description Facebook Reels Zaman Butonu Ekleme
@@ -22,36 +22,58 @@
 // @grant       none
 // @unwrap
 // @downloadURL https://update.greasyfork.org/scripts/487657/Facebook%20Reel%3A%20Video%20Controls%20Fork.user.js
-// @updateURL https://update.greasyfork.org/scripts/487657/Facebook%20Reel%3A%20Video%20Controls%20Fork.meta.js
+// @updateURL   https://update.greasyfork.org/scripts/487657/Facebook%20Reel%3A%20Video%20Controls%20Fork.meta.js
 // ==/UserScript==
 
 document.addEventListener('play', (evt) => {
-  const target = (evt || 0).target;
+    const target = evt.target;
 
-  if (target instanceof HTMLVideoElement && !target.hasAttribute('controls') && location.href.includes('reel')) {
-    let buttonLayer = target.closest('div[class][role="button"][tabindex]');
+    if (target instanceof HTMLVideoElement && !target.hasAttribute('controls') && location.href.includes('reel')) {
+        let buttonLayer = target.closest('div[class*="x9f619"][class*="x1n2onr6"]');
 
-    if (buttonLayer) {
-      target.setAttribute('controls', '');
+        if (buttonLayer) {
+            target.setAttribute('controls', '');
 
-      setTimeout(() => {
-        Object.assign(target.style, {
-          'position': 'relative',
-          'zIndex': 999,
-          'pointerEvents': 'all'
-        });
+            setTimeout(() => {
+                Object.assign(target.style, {
+                    'position': 'relative',
+                    'zIndex': 999,
+                    'pointerEvents': 'all'
+                });
 
-        [...buttonLayer.querySelectorAll('.x10l6tqk.x13vifvy:not(.x1m3v4wt)')].forEach(s => {
-          Object.assign(s.style, {
-            'pointerEvents': 'none',
-            'position': 'relative',
-            'zIndex': 1000
-          });
-        });
-      }, 1);
+                // Yalnızca Yorum Yap, Beğen, Paylaş ve Diğer Videoya Geç butonlarını aktif hale getir
+                const interactiveButtons = buttonLayer.querySelectorAll('[aria-label="Yorum Yap"], [aria-label="Beğen"], [aria-label="Paylaş"], .x14yjl9h');
+                interactiveButtons.forEach(button => {
+                    Object.assign(button.style, {
+                        'pointerEvents': 'auto',
+                        'zIndex': 1002
+                    });
+                });
+
+                // Diğer tüm üst katmanları devre dışı bırak
+                [...buttonLayer.children].forEach(child => {
+                    if (![...interactiveButtons].includes(child)) {
+                        Object.assign(child.style, {
+                            'pointerEvents': 'none'
+                        });
+                    }
+                });
+
+            }, 1);
+        }
     }
-  }
 }, true);
+
+// Yeni içerik yüklendiğinde butonları tekrar aktif et
+const observer = new MutationObserver(() => {
+    document.querySelectorAll('video').forEach(video => {
+        if (!video.hasAttribute('controls')) {
+            video.dispatchEvent(new Event('play'));
+        }
+    });
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
 ```
 
 ## Facebook sayfasını bir kere yenileyin. artık bundan sonra tüm reels'lere tıklayınca zaman yönetme butonu aktif olacak.
